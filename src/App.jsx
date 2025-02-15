@@ -6,6 +6,8 @@ import {
 
 import Dashboard from './pages/Dashboard';
 import BeneficiaryCount from "./pages/BeneficiaryCount"
+import BeneficiaryFormpage from "./pages/BeneficiaryFormPage"
+
 
 function App() {
 
@@ -13,7 +15,8 @@ function App() {
     <>
       <Routes>
         <Route exact path="/" element={<Dashboard />} />
-        <Route exact path="/beneficiary_count" element={<BeneficiaryCount />} />
+        <Route exact path="/beneficiaries" element={<BeneficiaryCount />} />
+        <Route path="/beneficiaries/:formIndex" element={<BeneficiaryFormpage />} />
       </Routes>
     </>
   );
