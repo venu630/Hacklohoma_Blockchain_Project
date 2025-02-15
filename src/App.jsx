@@ -7,7 +7,6 @@ import {
 import Dashboard from './pages/Dashboard';
 import BeneficiaryCount from "./pages/BeneficiaryCount"
 import BeneficiaryFormpage from "./pages/BeneficiaryFormPage"
-import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 

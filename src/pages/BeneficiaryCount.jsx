@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Dropdown } from "primereact/dropdown";
 import { Button } from "primereact/button";
 
-function BeneficiaryCount() {
+const BeneficiaryCount = () => {
   const navigate = useNavigate();
   const [selectedCount, setSelectedCount] = useState(0);
 
