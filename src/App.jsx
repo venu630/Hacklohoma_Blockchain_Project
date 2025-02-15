@@ -7,6 +7,9 @@ import {
 import Dashboard from './pages/Dashboard';
 import BeneficiaryCount from "./pages/BeneficiaryCount"
 import BeneficiaryFormpage from "./pages/BeneficiaryFormPage"
+import Dashboard from "./pages/Dashboard";
+import Login from "./pages/Login";
+import SignUp from "./pages/SignUp";
 
 
 function App() {
@@ -17,6 +20,8 @@ function App() {
         <Route exact path="/" element={<Dashboard />} />
         <Route exact path="/beneficiaries" element={<BeneficiaryCount />} />
         <Route path="/beneficiaries/:formIndex" element={<BeneficiaryFormpage />} />
+        <Route exact path="/login" element={<Login />} />
+        <Route exact path="/signup" element={<SignUp />} />
       </Routes>
     </>
   );
