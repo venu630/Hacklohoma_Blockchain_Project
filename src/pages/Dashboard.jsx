@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import "./Dashboard.css";
+import "../styles/Dashboard.css";
+import Header from "./Header";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -8,8 +9,7 @@ const Dashboard = () => {
   return (
     <div className="dashboard">
       {/* Navigation */}
-      <nav className="navbar">
-        <div className="nav-brand">CryptoWill</div>
+      <Header>
         <div className="nav-buttons">
           <button
             onClick={() => navigate("/login")}
@@ -24,7 +24,7 @@ const Dashboard = () => {
             Sign Up
           </button>
         </div>
-      </nav>
+      </Header>
 
       {/* Hero Section */}
       <header className="hero">
