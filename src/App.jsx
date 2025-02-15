@@ -5,6 +5,7 @@ import {
 } from 'react-router-dom';
 
 import Dashboard from './pages/Dashboard';
+import BeneficiaryCount from "./pages/BeneficiaryCount"
 
 function App() {
 
@@ -12,6 +13,7 @@ function App() {
     <>
       <Routes>
         <Route exact path="/" element={<Dashboard />} />
+        <Route exact path="/beneficiary_count" element={<BeneficiaryCount />} />
       </Routes>
     </>
   );
