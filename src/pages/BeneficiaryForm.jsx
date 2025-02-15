@@ -2,7 +2,7 @@ import React from 'react';
 import { Form, Field, FormSpy } from 'react-final-form';
 import { InputText } from 'primereact/inputtext';
 import { classNames } from 'primereact/utils';
-import './FormDemo.css';
+import '../styles/FormDemo.css';
 
 function BeneficiaryForm({ index, onFormDataChange, initialData }) {
   // Validation function for the form fields
