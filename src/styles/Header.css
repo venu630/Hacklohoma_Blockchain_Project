@@ -31,13 +31,12 @@
 .brand-name {
   font-size: 1.5rem;
   font-weight: bold;
-  color: #fff;
   letter-spacing: 0.5px;
 }
 
 .brand-tagline {
   font-size: 0.75rem;
-  color: #00f6ff;
+  color: #4f46e5;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
