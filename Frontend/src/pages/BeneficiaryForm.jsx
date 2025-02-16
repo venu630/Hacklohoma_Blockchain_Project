@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import axios from "axios";
 import { ethers } from "ethers";
 import contractABI from "../data/MultiWillContract.json"; // Import contract ABI
 
-const CONTRACT_ADDRESS = "0x17f1589110996a7a29441cbc0570ea82d3836b43"; // Replace with your deployed contract address
+const CONTRACT_ADDRESS = "0x96f3c7bcc7f098b9f12219a2842235863ec0a774"; // Replace with your deployed contract address
 
 const BeneficiaryForm = () => {
+    const location = useLocation();
+    const willOwner = location.state?.willOwner || ""; // Get will owner's address from navigation state
+
     const [formData, setFormData] = useState({
-        firstName: "",
-        lastName: "",
-        age: "",
         walletAddress: "",
         email: "",
         percentageShare: "",
@@ -41,7 +42,7 @@ const BeneficiaryForm = () => {
     // 🔹 Upload Sale Deed to Pinata (IPFS)
     const uploadToPinata = async () => {
         if (!file) {
-            alert("Please select a file first.");
+            alert("❌ Please select a file first.");
             return null;
         }
 
@@ -53,6 +54,7 @@ const BeneficiaryForm = () => {
         data.append("pinataOptions", options);
 
         try {
+            console.log("📤 Uploading file to Pinata...");
             const response = await axios.post("https://api.pinata.cloud/pinning/pinFileToIPFS", data, {
                 headers: {
                     "Content-Type": "multipart/form-data",
@@ -61,9 +63,10 @@ const BeneficiaryForm = () => {
                 },
             });
 
+            console.log("✅ File uploaded to IPFS:", response.data.IpfsHash);
             return response.data.IpfsHash;
         } catch (err) {
-            console.error("Pinata upload failed", err);
+            console.error("❌ Pinata upload failed", err);
             return null;
         }
     };
@@ -82,64 +85,95 @@ const BeneficiaryForm = () => {
                 return;
             }
 
-            // 2️⃣ Upload Sale Deed to Pinata
+            // 2️⃣ Validate Wallet Address
+            if (!ethers.utils.isAddress(formData.walletAddress)) {
+                alert("❌ Invalid wallet address.");
+                setIsUploading(false);
+                return;
+            }
+
+            // 3️⃣ Validate Percentage
+            const percentage = parseInt(formData.percentageShare);
+            if (percentage < 1 || percentage > 100) {
+                alert("❌ Percentage must be between 1 and 100.");
+                setIsUploading(false);
+                return;
+            }
+
+            // 4️⃣ Upload Sale Deed to Pinata
             const uploadedIpfsHash = await uploadToPinata();
             if (!uploadedIpfsHash) {
-                alert("File upload failed!");
+                alert("❌ File upload failed!");
                 setIsUploading(false);
                 return;
             }
             setIpfsHash(uploadedIpfsHash);
 
-            // 3️⃣ Connect to MetaMask & Get Provider
+            // 5️⃣ Connect to MetaMask
             const provider = new ethers.providers.Web3Provider(window.ethereum);
-            await provider.send("eth_requestAccounts", []); // Request account access
-            const signer = provider.getSigner(); // Get the connected account
+            await provider.send("eth_requestAccounts", []);
+            const signer = provider.getSigner();
 
-            // 4️⃣ Connect to Smart Contract
+            // 6️⃣ Connect to Smart Contract
             const contract = new ethers.Contract(CONTRACT_ADDRESS, contractABI.abi, signer);
 
-            // 5️⃣ Execute Smart Contract Function (Adding Beneficiary)
-            const transaction = await contract.addBeneficiary(
+            // 7️⃣ Manually Estimate Gas
+            console.log("⏳ Estimating gas...");
+            const gasLimit = await contract.estimateGas.addBeneficiary(
                 formData.walletAddress,
-                parseInt(formData.percentageShare),
+                percentage,
                 uploadedIpfsHash,
                 formData.email
             );
 
-            const result = await transaction.wait(); // Wait for transaction confirmation
+            console.log(`✅ Estimated Gas Limit: ${gasLimit.toString()}`);
 
-            // 6️⃣ Display Transaction Hash
+            // 8️⃣ Execute Contract Function
+            console.log("📤 Sending Transaction...");
+            console.log("Will Owner:", willOwner);
+            console.log("Wallet Address:", formData.walletAddress);
+            console.log("Percentage Share:", percentage);
+            console.log("IPFS Hash:", uploadedIpfsHash);
+            console.log("Email:", formData.email);
+
+            const transaction = await contract.addBeneficiary(
+                formData.walletAddress,
+                percentage,
+                uploadedIpfsHash,
+                formData.email,
+                { gasLimit }
+            );
+
+            const result = await transaction.wait();
             setTransactionHash(result.transactionHash);
             alert(`✅ Beneficiary added successfully! Transaction Hash: ${result.transactionHash}`);
 
         } catch (error) {
             console.error("❌ Error submitting form:", error);
-            setErrorMessage("Submission failed! Check the console for details.");
+            setErrorMessage("❌ Submission failed! Check the console for details.");
         } finally {
             setIsUploading(false);
         }
     };
 
     return (
-        <form onSubmit={handleSubmit}>
-            <h2>Beneficiary Form</h2>
-            <input type="text" name="firstName" placeholder="First Name" value={formData.firstName} onChange={handleChange} required />
-            <input type="text" name="lastName" placeholder="Last Name" value={formData.lastName} onChange={handleChange} required />
-            <input type="number" name="age" placeholder="Age" value={formData.age} onChange={handleChange} required />
-            <input type="text" name="walletAddress" placeholder="Wallet Address" value={formData.walletAddress} onChange={handleChange} required />
-            <input type="email" name="email" placeholder="Beneficiary Email" value={formData.email} onChange={handleChange} required />
-            <input type="number" name="percentageShare" placeholder="Percentage Share" value={formData.percentageShare} onChange={handleChange} required />
-            <input type="file" accept="application/pdf" onChange={handleFileChange} required />
+        <div>
+            <h2>Add Beneficiary</h2>
+            <form onSubmit={handleSubmit}>
+                <input type="text" name="walletAddress" placeholder="Wallet Address" value={formData.walletAddress} onChange={handleChange} required />
+                <input type="email" name="email" placeholder="Beneficiary Email" value={formData.email} onChange={handleChange} required />
+                <input type="number" name="percentageShare" placeholder="Percentage Share" value={formData.percentageShare} onChange={handleChange} required />
+                <input type="file" accept="application/pdf" onChange={handleFileChange} required />
 
-            <button type="submit" disabled={isUploading || !isMetaMaskInstalled}>
-                {isUploading ? "Processing..." : "Submit"}
-            </button>
+                <button type="submit" disabled={isUploading || !isMetaMaskInstalled}>
+                    {isUploading ? "Processing..." : "Add Beneficiary"}
+                </button>
 
-            {errorMessage && <p style={{ color: "red" }}>❌ {errorMessage}</p>}
-            {ipfsHash && <p>📂 Uploaded to IPFS: <a href={`https://ipfs.io/ipfs/${ipfsHash}`} target="_blank" rel="noopener noreferrer">{ipfsHash}</a></p>}
-            {transactionHash && <p>✅ Transaction Successful! <a href={`https://sepolia.etherscan.io/tx/${transactionHash}`} target="_blank" rel="noopener noreferrer">{transactionHash}</a></p>}
-        </form>
+                {errorMessage && <p style={{ color: "red" }}>❌ {errorMessage}</p>}
+                {ipfsHash && <p>📂 Uploaded to IPFS: <a href={`https://ipfs.io/ipfs/${ipfsHash}`} target="_blank" rel="noopener noreferrer">{ipfsHash}</a></p>}
+                {transactionHash && <p>✅ Transaction Successful! <a href={`https://sepolia.etherscan.io/tx/${transactionHash}`} target="_blank" rel="noopener noreferrer">{transactionHash}</a></p>}
+            </form>
+        </div>
     );
 };
 
