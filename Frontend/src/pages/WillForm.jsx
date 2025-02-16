@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
 import contractABI from "../data/MultiWillContract.json"; // Import latest ABI
 
-const CONTRACT_ADDRESS = "0x1da9a4c1c3649c93e9c65791b212477e9af3b9df"; // Replace with your deployed contract address
+const CONTRACT_ADDRESS = "0xd9145CCE52D386f254917e481eB44e9943F39138"; // Replace with your deployed contract address
 
 function WillForm() {
   const navigate = useNavigate();
