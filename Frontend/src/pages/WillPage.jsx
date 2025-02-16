@@ -14,7 +14,7 @@ const WillPage = () => {
   const navigate = useNavigate();
 
   const MULTI_WILL_CONTRACT_ADDRESS =
-    "0x17F1589110996A7a29441Cbc0570ea82d3836B43";
+    "0x17f1589110996a7a29441cbc0570ea82d3836b43";
   const location = useLocation();
   const { defaultAccount } = location.state || {};
 

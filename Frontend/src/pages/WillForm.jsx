@@ -1,34 +1,27 @@
 import React from 'react';
-import { Form, Field, FormSpy } from 'react-final-form';
+import { Form, Field } from 'react-final-form';
 import { InputText } from 'primereact/inputtext';
 import { Dropdown } from 'primereact/dropdown';
 import { Button } from 'primereact/button';
 import { classNames } from 'primereact/utils';
+import axios from 'axios';
 import { useNavigate } from "react-router-dom";
-import '../styles/FormDemo.css';
 
 function WillForm() {
   const navigate = useNavigate();
 
-  // Validation function for the form fields
+  // Validation function for form fields
   const validate = (data) => {
     const errors = {};
-
-    // First Name
+    
     if (!data.firstName) {
       errors.firstName = 'First Name is required.';
     }
-    // Last Name
+    
     if (!data.lastName) {
       errors.lastName = 'Last Name is required.';
     }
-    // Age
-    if (!data.age) {
-      errors.age = 'Age is required.';
-    } else if (isNaN(Number(data.age)) || Number(data.age) <= 0) {
-      errors.age = 'Please enter a valid age.';
-    }
-    // Beneficiary Count
+    
     if (!data.beneficiaryCount) {
       errors.beneficiaryCount = 'Beneficiary Count is required.';
     }
@@ -41,32 +34,32 @@ function WillForm() {
   const getFormErrorMessage = (meta) =>
     isFormFieldValid(meta) ? <small className="p-error">{meta.error}</small> : null;
 
-  const handleNavigation = (values, valid) => {
-    if (!valid) {
-      alert("Please fill all fields correctly before proceeding.");
-      return;
+  // Form submission function
+  const onSubmit = async (values) => {
+    try {
+      // Store beneficiary count in localStorage
+      localStorage.setItem("beneficiaryCount", JSON.stringify(values));
+
+      // Submit data to API
+      // const response = await axios.post("https://api.example.com/submit-form", values);
+      
+      // alert("Form submitted successfully!");
+      navigate("/beneficiaries_form")
+      // console.log("API Response:", response.data);
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      alert("Failed to submit form. Please try again.");
     }
-
-    // Store user details in sessionStorage
-    sessionStorage.setItem("userDetails", JSON.stringify(values));
-
-    // Navigate to the first beneficiary form
-    navigate(`/beneficiaries/1?count=${values.beneficiaryCount}`);
   };
 
   return (
-    <div style={{ border: '1px solid #ccc', padding: '2rem', margin: '1rem 0', width: "50%", marginLeft: "auto", marginRight: "auto" }}>
-      <h3>Your Details</h3>
+    <div style={{ border: '1px solid #ccc', padding: '2rem', margin: '1rem auto', width: "50%" }}>
+      <h3>Beneficiary Form</h3>
       <Form
-        onSubmit={() => {}} // No local submit action needed.
-        initialValues={{
-          firstName: '',
-          lastName: '',
-          age: '',
-          beneficiaryCount: null,
-        }}
+        onSubmit={onSubmit}
+        initialValues={{ firstName: '', lastName: '', beneficiaryCount: null }}
         validate={validate}
-        render={({ handleSubmit }) => (
+        render={({ handleSubmit, form }) => (
           <form onSubmit={handleSubmit} className="p-fluid">
             {/* First Name */}
             <Field name="firstName">
@@ -106,26 +99,6 @@ function WillForm() {
               )}
             </Field>
 
-            {/* Age */}
-            <Field name="age">
-              {({ input, meta }) => (
-                <div className="field">
-                  <span className="p-float-label">
-                    <InputText
-                      id="age"
-                      {...input}
-                      keyfilter="int"
-                      className={classNames({ 'p-invalid': isFormFieldValid(meta) })}
-                    />
-                    <label htmlFor="age" className={classNames({ 'p-error': isFormFieldValid(meta) })}>
-                      Age*
-                    </label>
-                  </span>
-                  {getFormErrorMessage(meta)}
-                </div>
-              )}
-            </Field>
-
             {/* Beneficiary Count */}
             <Field name="beneficiaryCount">
               {({ input, meta }) => (
@@ -134,13 +107,7 @@ function WillForm() {
                     <Dropdown
                       id="beneficiaryCount"
                       {...input}
-                      options={[
-                        { label: "1", value: 1 },
-                        { label: "2", value: 2 },
-                        { label: "3", value: 3 },
-                        { label: "4", value: 4 },
-                        { label: "5", value: 5 },
-                      ]}
+                      options={[1, 2, 3, 4, 5].map((num) => ({ label: String(num), value: num }))}
                       placeholder="Select a number"
                       className={classNames({ 'p-invalid': isFormFieldValid(meta) })}
                     />
@@ -153,26 +120,8 @@ function WillForm() {
               )}
             </Field>
 
-            {/* Navigation Buttons */}
-            <FormSpy subscription={{ values: true, valid: true }}>
-              {({ values, valid }) => (
-                <div style={{ marginTop: "1rem", display: "flex", gap: "1rem" }}>
-                  <Button
-                    label="Previous"
-                    icon="pi pi-angle-left"
-                    onClick={() => navigate("/")}
-                    className="p-button-outlined"
-                  />
-                  <Button
-                    label="Next"
-                    icon="pi pi-angle-right"
-                    onClick={() => handleNavigation(values, valid)}
-                    disabled={!valid}
-                    className="p-button-primary"
-                  />
-                </div>
-              )}
-            </FormSpy>
+            {/* Submit Button */}
+            <Button type="submit" label="Submit" className="p-mt-2" />
           </form>
         )}
       />
