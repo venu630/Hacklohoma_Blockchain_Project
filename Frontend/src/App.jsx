@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import {
   Routes,
@@ -10,9 +11,12 @@ import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import WillForm from './pages/WillForm';
 
+import Dashboard from "./pages/Dashboard";
+import BeneficiaryCount from "./pages/BeneficiaryCount";
+import BeneficiaryFormpage from "./pages/BeneficiaryFormPage";
+import WillPage from "./pages/WillPage";
 
 function App() {
-
   return (
     <>
       <Routes>

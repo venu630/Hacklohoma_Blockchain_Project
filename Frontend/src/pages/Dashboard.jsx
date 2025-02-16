@@ -1,30 +1,37 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Dashboard.css";
 import Header from "./Header";
 
 const Dashboard = () => {
+  const [errorMessage, setErrorMessage] = useState(null); // State for storing error messages.
+  const [defaultAccount, setDefaultAccount] = useState(null); // State for storing the user's default Ethereum account.
+  const [connButtonText, setConnButtonText] = useState("Connect To Wallet"); // State for the connect button text.
+
   const navigate = useNavigate();
+
+  const connectWalletHandler = async () => {
+    if (window.ethereum && window.ethereum.isMetaMask) {
+      // Check if MetaMask is installed.
+      try {
+        // Requesting accounts access.
+        const accounts = await window.ethereum.request({
+          method: "eth_requestAccounts",
+        });
+        setDefaultAccount(accounts[0]);
+        setConnButtonText("Wallet Connected");
+      } catch (error) {
+        setErrorMessage(error.message);
+      }
+    } else {
+      setErrorMessage("Please install MetaMask browser extension to interact");
+    }
+  };
 
   return (
     <div className="dashboard">
       {/* Navigation */}
-      <Header>
-        <div className="nav-buttons">
-          <button
-            onClick={() => navigate("/login")}
-            className="btn btn-outline"
-          >
-            Login
-          </button>
-          <button
-            onClick={() => navigate("/signup")}
-            className="btn btn-primary"
-          >
-            Sign Up
-          </button>
-        </div>
-      </Header>
+      <Header />
 
       {/* Hero Section */}
       <header className="hero">
@@ -32,9 +39,29 @@ const Dashboard = () => {
         <p>
           Create and manage smart contract-based wills for your digital assets
         </p>
-        <button onClick={() => navigate("/signup")} className="btn btn-primary">
-          Get Started
+        <button
+          onClick={connectWalletHandler}
+          className={!defaultAccount ? "btn btn-primary" : "btn btn-info"}
+          disabled={defaultAccount}
+        >
+          {connButtonText}
         </button>
+        {defaultAccount && (
+          <p className="text-green-600 font-mono text-center">
+            Connected as {defaultAccount}
+          </p>
+        )}
+        {errorMessage && (
+          <p className="text-red-500 text-center">{errorMessage}</p>
+        )}
+        {defaultAccount && (
+          <button
+            onClick={() => navigate("/will", { state: { defaultAccount } })}
+            className="btn btn-primary"
+          >
+            Get Started
+          </button>
+        )}
       </header>
 
       {/* Features */}
@@ -106,12 +133,6 @@ const Dashboard = () => {
       <section className="cta">
         <h2>Ready to Secure Your Digital Legacy?</h2>
         <div className="cta-buttons">
-          <button
-            onClick={() => navigate("/signup")}
-            className="btn btn-primary"
-          >
-            Create Your Will
-          </button>
           <button className="btn btn-outline">Learn More</button>
         </div>
       </section>
