@@ -50,23 +50,36 @@ function BeneficiaryFormPage() {
       // Navigate to the next beneficiary form (it will mount fresh because of key)
       navigate(`/beneficiaries/${currentIndex + 1}?count=${totalCount}`);
     } else {
-      // On the last form: aggregate all data and validate total percentage share
-      const allData = JSON.parse(sessionStorage.getItem("beneficiaries") || "{}");
-      // Calculate the total percentage share
-      const totalShare = Object.values(allData).reduce(
+      // Retrieve WillForm data
+      const willFormData = JSON.parse(sessionStorage.getItem("userDetails") || "{}");
+      const beneficiariesData = JSON.parse(sessionStorage.getItem("beneficiaries") || "{}");
+
+      // Combine WillForm details with beneficiaries' data
+      const allData = {
+        willForm: willFormData,
+        beneficiaries: beneficiariesData
+      };
+
+      // Validate total percentage share
+      const totalShare = Object.values(beneficiariesData).reduce(
         (acc, data) => acc + Number(data.percentageShare || 0),
         0
       );
+
       if (totalShare !== 100) {
         alert(`The total percentage share must equal 100. Currently, it is ${totalShare}.`);
         return;
       }
+
       // Optionally clear sessionStorage after submission
       sessionStorage.removeItem("beneficiaries");
-      // Simulate API submission (replace with your actual API call)
-      console.log("Submitting all beneficiaries data to API:", allData);
-      alert("All beneficiaries submitted successfully!");
-      navigate("/"); // or navigate to a summary page
+      sessionStorage.removeItem("userDetails");
+
+      // Simulate API submission (replace with actual API call)
+      console.log("Submitting all data to API:", allData);
+      alert("All data submitted successfully!");
+
+      navigate("/"); // Redirect to a summary page or home
     }
   };
   
@@ -83,17 +96,11 @@ function BeneficiaryFormPage() {
     <div
       style={{
         width: "50%", // Ensures form remains 50% width
-        height: "100vh", // Prevents vertical scroll
         display: "flex",
         flexDirection: "column",
         alignItems: "center", // Centers horizontally
         justifyContent: "center", // Centers vertically
-        overflow: "hidden", // Ensures no scrolling
         margin: "0 auto", // Prevents horizontal overflow
-        position: "fixed", // Keeps form fixed within viewport
-        top: 0,
-        left: "50%",
-        transform: "translateX(-50%)", // Ensures it remains centered
       }}
     >
       <h3 style={{ marginBottom: "1rem" }}>
