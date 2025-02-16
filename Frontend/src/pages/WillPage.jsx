@@ -14,14 +14,14 @@ const WillPage = () => {
   const [transactionHash, setTransactionHash] = useState(null);
   const [contract, setContract] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [simulatingDeath, setSimulatingDeath] = useState(false);
   const navigate = useNavigate();
 
   const MULTI_WILL_CONTRACT_ADDRESS =
-    "0x96f3c7bcc7f098b9f12219a2842235863ec0a774"; // Replace with deployed contract address
+    "0x1da9a4c1c3649c93e9c65791b212477e9af3b9df";
   const location = useLocation();
   const { defaultAccount } = location.state || {};
 
-  // 🔹 Load Blockchain Data (Check if User Has a Will)
   async function loadBlockchainData() {
     try {
       if (!window.ethereum) {
@@ -48,13 +48,16 @@ const WillPage = () => {
         if (hasUserWill) {
           console.log("✅ User has a will. Fetching transaction hash...");
 
-          // 🔹 Fetch only the transaction hash
           const txnHash = await contractInstance.getWillTransactionHash(
             defaultAccount
           );
-          console.log("📜 Transaction Hash:", txnHash);
 
-          setTransactionHash(txnHash);
+          if (txnHash && txnHash !== "0x") {
+            console.log("📜 Retrieved Transaction Hash:", txnHash);
+            setTransactionHash(txnHash);
+          } else {
+            console.warn("⚠️ No valid transaction hash found.");
+          }
         }
       }
     } catch (err) {
@@ -65,9 +68,29 @@ const WillPage = () => {
     }
   }
 
+  const handleSimulateDeath = async () => {
+    setSimulatingDeath(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/tasks/trigger`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await response.json();
+      console.log("Task result:", data);
+      alert("Death simulation completed successfully!");
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Failed to trigger task. Please try again.");
+    } finally {
+      setSimulatingDeath(false);
+    }
+  };
+
   useEffect(() => {
     loadBlockchainData();
-  }, [defaultAccount]); // Run when defaultAccount changes
+  }, [defaultAccount]);
 
   return (
     <>
@@ -93,11 +116,8 @@ const WillPage = () => {
                 <>
                   <div>
                     <p>
-                      <strong>Transaction Hash:</strong> {transactionHash}
-                    </p>
-                    <p>
                       <a
-                        href={`https://sepolia.etherscan.io/tx/${transactionHash}`}
+                        href={`https://sepolia.etherscan.io/address/${defaultAccount}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -122,31 +142,14 @@ const WillPage = () => {
             <h3>Testing Tools</h3>
             <Button
               severity="warning"
-              label="Simulate Death Event"
-              onClick={async () => {
-                try {
-                  const response = await fetch(
-                    `${API_BASE_URL}/api/tasks/trigger`,
-                    {
-                      method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                      },
-                    }
-                  );
-                  const data = await response.json();
-                  console.log("Task result:", data);
-                } catch (error) {
-                  console.error("Error:", error);
-                  alert("Failed to trigger task");
-                }
-              }}
+              label={simulatingDeath ? "Simulating..." : "Simulate Death Event"}
+              loading={simulatingDeath}
+              disabled={simulatingDeath}
+              onClick={handleSimulateDeath}
             />
           </Card>
         </div>
-      ) : (
-        ""
-      )}
+      ) : null}
     </>
   );
 };
