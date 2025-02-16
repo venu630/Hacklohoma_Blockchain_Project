@@ -41,7 +41,7 @@ Instructions on how to set up and run the project are needed.  Typically, this w
 2.  **Backend Setup:** (Example - assumes Node.js)
     ```
     cd Backend
-    npm install  # or yarn install
+    npm install  
     npm start    # or yarn start
     ```
 
