@@ -8,9 +8,8 @@ const Header = ({ children }) => {
     <nav className="navbar">
       <div className="nav-brand" onClick={() => navigate("/")}>
         <div className="brand-content">
-          <span className="brand-icon">⛓️</span>
           <div className="brand-text">
-            <span className="brand-name">CryptoWill</span>
+            <span className="brand-name">Dead Man's Contract</span>
             <span className="brand-tagline">Smart Contract Inheritance</span>
           </div>
         </div>
