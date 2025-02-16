@@ -1,286 +1,180 @@
-import React from 'react';
-import { Form, Field, FormSpy } from 'react-final-form';
-import { InputText } from 'primereact/inputtext';
-import { classNames } from 'primereact/utils';
-import '../styles/FormDemo.css';
+import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import axios from "axios";
+import { ethers } from "ethers";
+import contractABI from "../data/MultiWillContract.json"; // Import contract ABI
 
-function BeneficiaryForm({ index, onFormDataChange, initialData }) {
-  // Validation function for the form fields
-  const validate = (data) => {
-    const errors = {};
+const CONTRACT_ADDRESS = "0x96f3c7bcc7f098b9f12219a2842235863ec0a774"; // Replace with your deployed contract address
 
-    // First Name
-    if (!data.firstName) {
-      errors.firstName = 'First Name is required.';
-    }
-    // Last Name
-    if (!data.lastName) {
-      errors.lastName = 'Last Name is required.';
-    }
-    // Email Address (New Field)
-    if (!data.email) {
-      errors.email = 'Email is required.';
-    } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(data.email)) {
-      errors.email = 'Invalid email format.';
-    }
-    // Age
-    if (!data.age) {
-      errors.age = 'Age is required.';
-    } else if (isNaN(Number(data.age)) || Number(data.age) <= 0) {
-      errors.age = 'Please enter a valid age.';
-    }
-    // Relation
-    if (!data.relation) {
-      errors.relation = 'Relation is required.';
-    }
-    // Wallet Address
-    if (!data.walletAddress) {
-      errors.walletAddress = 'Wallet Address is required.';
-    }
-    // Percentage Share
-    if (
-      data.percentageShare === undefined ||
-      data.percentageShare === '' ||
-      isNaN(Number(data.percentageShare))
-    ) {
-      errors.percentageShare = 'Percentage Share is required and must be a number.';
-    } else {
-      const share = Number(data.percentageShare);
-      if (share < 1 || share > 100) {
-        errors.percentageShare = 'Percentage Share must be between 1 and 100.';
-      }
-    }
-    // Sale Deed (PDF upload)
-    if (!data.saleDeed || !data.saleDeed.name) {
-      errors.saleDeed = 'Sale Deed (PDF) is required.';
-    } else {
-      const fileName = data.saleDeed.name.toLowerCase();
-      if (!fileName.endsWith('.pdf')) {
-        errors.saleDeed = 'Sale Deed must be a PDF file.';
-      }
-    }
+const BeneficiaryForm = () => {
+    const location = useLocation();
+    const willOwner = location.state?.willOwner || ""; // Get will owner's address from navigation state
 
-    return errors;
-  };
+    const [formData, setFormData] = useState({
+        walletAddress: "",
+        email: "",
+        percentageShare: "",
+    });
+    const [file, setFile] = useState(null);
+    const [ipfsHash, setIpfsHash] = useState(null);
+    const [transactionHash, setTransactionHash] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const [isMetaMaskInstalled, setIsMetaMaskInstalled] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
 
-  // Helper functions for error display
-  const isFormFieldValid = (meta) => meta.touched && meta.error;
-  const getFormErrorMessage = (meta) =>
-    isFormFieldValid(meta) ? <small className="p-error">{meta.error}</small> : null;
+    // 🔹 Detect MetaMask
+    useEffect(() => {
+        if (typeof window.ethereum !== "undefined") {
+            setIsMetaMaskInstalled(true);
+        } else {
+            setIsMetaMaskInstalled(false);
+        }
+    }, []);
 
-  return (
-    <div style={{ border: '1px solid #ccc', padding: '2rem', margin: '1rem 0' }}>
-      <h3>Beneficiary #{index + 1} Details</h3>
-      <Form
-        onSubmit={() => {}} // No local submit action needed.
-        initialValues={{
-          // Note: We intentionally do not pass previous data when a new form is rendered.
-          firstName: initialData?.firstName || '',
-          lastName: initialData?.lastName || '',
-          email: initialData?.email || '', // New field
-          age: initialData?.age || '',
-          relation: initialData?.relation || '',
-          walletAddress: initialData?.walletAddress || '',
-          percentageShare: initialData?.percentageShare || '',
-          saleDeed: initialData?.saleDeed || null,
-        }}
-        validate={validate}
-        render={({ handleSubmit }) => (
-          <form onSubmit={handleSubmit} className="p-fluid">
-            {/* First Name */}
-            <Field name="firstName">
-              {({ input, meta }) => (
-                <div className="field">
-                  <span className="p-float-label">
-                    <InputText
-                      id={`firstName-${index}`}
-                      {...input}
-                      className={classNames({ 'p-invalid': isFormFieldValid(meta) })}
-                    />
-                    <label
-                      htmlFor={`firstName-${index}`}
-                      className={classNames({ 'p-error': isFormFieldValid(meta) })}
-                    >
-                      First Name*
-                    </label>
-                  </span>
-                  {getFormErrorMessage(meta)}
-                </div>
-              )}
-            </Field>
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
 
-            {/* Last Name */}
-            <Field name="lastName">
-              {({ input, meta }) => (
-                <div className="field">
-                  <span className="p-float-label">
-                    <InputText
-                      id={`lastName-${index}`}
-                      {...input}
-                      className={classNames({ 'p-invalid': isFormFieldValid(meta) })}
-                    />
-                    <label
-                      htmlFor={`lastName-${index}`}
-                      className={classNames({ 'p-error': isFormFieldValid(meta) })}
-                    >
-                      Last Name*
-                    </label>
-                  </span>
-                  {getFormErrorMessage(meta)}
-                </div>
-              )}
-            </Field>
+    const handleFileChange = (e) => {
+        setFile(e.target.files[0]);
+    };
 
-            {/* Email Address (New Field) */}
-            <Field name="email">
-              {({ input, meta }) => (
-                <div className="field">
-                  <span className="p-float-label">
-                    <InputText
-                      id={`email-${index}`}
-                      {...input}
-                      className={classNames({ 'p-invalid': isFormFieldValid(meta) })}
-                    />
-                    <label
-                      htmlFor={`email-${index}`}
-                      className={classNames({ 'p-error': isFormFieldValid(meta) })}
-                    >
-                      Email Address*
-                    </label>
-                  </span>
-                  {getFormErrorMessage(meta)}
-                </div>
-              )}
-            </Field>
+    // 🔹 Upload Sale Deed to Pinata (IPFS)
+    const uploadToPinata = async () => {
+        if (!file) {
+            alert("❌ Please select a file first.");
+            return null;
+        }
 
-            {/* Age */}
-            <Field name="age">
-              {({ input, meta }) => (
-                <div className="field">
-                  <span className="p-float-label">
-                    <InputText
-                      id={`age-${index}`}
-                      {...input}
-                      keyfilter="int"
-                      className={classNames({ 'p-invalid': isFormFieldValid(meta) })}
-                    />
-                    <label
-                      htmlFor={`age-${index}`}
-                      className={classNames({ 'p-error': isFormFieldValid(meta) })}
-                    >
-                      Age*
-                    </label>
-                  </span>
-                  {getFormErrorMessage(meta)}
-                </div>
-              )}
-            </Field>
+        const data = new FormData();
+        data.append("file", file);
+        const metadata = JSON.stringify({ name: file.name });
+        data.append("pinataMetadata", metadata);
+        const options = JSON.stringify({ cidVersion: 0 });
+        data.append("pinataOptions", options);
 
-            {/* Relation */}
-            <Field name="relation">
-              {({ input, meta }) => (
-                <div className="field">
-                  <span className="p-float-label">
-                    <InputText
-                      id={`relation-${index}`}
-                      {...input}
-                      className={classNames({ 'p-invalid': isFormFieldValid(meta) })}
-                    />
-                    <label
-                      htmlFor={`relation-${index}`}
-                      className={classNames({ 'p-error': isFormFieldValid(meta) })}
-                    >
-                      Relation*
-                    </label>
-                  </span>
-                  {getFormErrorMessage(meta)}
-                </div>
-              )}
-            </Field>
+        try {
+            console.log("📤 Uploading file to Pinata...");
+            const response = await axios.post("https://api.pinata.cloud/pinning/pinFileToIPFS", data, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                    pinata_api_key: "d0b6f6d2a44acded0a6f",
+                    pinata_secret_api_key: "c2d78fe6f4a0e844b5c1a5aa45c060c743e2a32d45a0955770e656cd27c12c0a",
+                },
+            });
 
-            {/* Wallet Address */}
-            <Field name="walletAddress">
-              {({ input, meta }) => (
-                <div className="field">
-                  <span className="p-float-label">
-                    <InputText
-                      id={`walletAddress-${index}`}
-                      {...input}
-                      className={classNames({ 'p-invalid': isFormFieldValid(meta) })}
-                    />
-                    <label
-                      htmlFor={`walletAddress-${index}`}
-                      className={classNames({ 'p-error': isFormFieldValid(meta) })}
-                    >
-                      Wallet Address*
-                    </label>
-                  </span>
-                  {getFormErrorMessage(meta)}
-                </div>
-              )}
-            </Field>
+            console.log("✅ File uploaded to IPFS:", response.data.IpfsHash);
+            return response.data.IpfsHash;
+        } catch (err) {
+            console.error("❌ Pinata upload failed", err);
+            return null;
+        }
+    };
 
-            {/* Percentage Share */}
-            <Field name="percentageShare">
-              {({ input, meta }) => (
-                <div className="field">
-                  <span className="p-float-label">
-                    <InputText
-                      id={`percentageShare-${index}`}
-                      {...input}
-                      keyfilter="int"
-                      className={classNames({ 'p-invalid': isFormFieldValid(meta) })}
-                    />
-                    <label
-                      htmlFor={`percentageShare-${index}`}
-                      className={classNames({ 'p-error': isFormFieldValid(meta) })}
-                    >
-                      Percentage Share*
-                    </label>
-                  </span>
-                  {getFormErrorMessage(meta)}
-                </div>
-              )}
-            </Field>
+    // 🔹 Handle Form Submission (Blockchain Storage)
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsUploading(true);
+        setErrorMessage("");
 
-            {/* Sale Deed (PDF Upload) */}
-            <Field name="saleDeed">
-              {({ input, meta }) => (
-                <div className="field">
-                  <label
-                    htmlFor={`saleDeed-${index}`}
-                    className={classNames({ 'p-error': isFormFieldValid(meta) })}
-                  >
-                    Sale Deed (PDF Upload)*
-                  </label>
-                  <input
-                    id={`saleDeed-${index}`}
-                    type="file"
-                    accept="application/pdf"
-                    onChange={(e) => {
-                      input.onChange(e.target.files && e.target.files[0]);
-                    }}
-                    className={classNames({ 'p-invalid': isFormFieldValid(meta) })}
-                  />
-                  {getFormErrorMessage(meta)}
-                </div>
-              )}
-            </Field>
+        try {
+            // 1️⃣ Ensure MetaMask is Installed
+            if (!isMetaMaskInstalled) {
+                alert("❌ MetaMask is not detected. Please install MetaMask.");
+                setIsUploading(false);
+                return;
+            }
 
-            {/* FormSpy to report form values and validity */}
-            <FormSpy subscription={{ values: true, valid: true }}>
-              {({ values, valid }) => {
-                if (onFormDataChange) {
-                  onFormDataChange(values, valid);
-                }
-                return null;
-              }}
-            </FormSpy>
-          </form>
-        )}
-      />
-    </div>
-  );
-}
+            // 2️⃣ Validate Wallet Address
+            if (!ethers.utils.isAddress(formData.walletAddress)) {
+                alert("❌ Invalid wallet address.");
+                setIsUploading(false);
+                return;
+            }
+
+            // 3️⃣ Validate Percentage
+            const percentage = parseInt(formData.percentageShare);
+            if (percentage < 1 || percentage > 100) {
+                alert("❌ Percentage must be between 1 and 100.");
+                setIsUploading(false);
+                return;
+            }
+
+            // 4️⃣ Upload Sale Deed to Pinata
+            const uploadedIpfsHash = await uploadToPinata();
+            if (!uploadedIpfsHash) {
+                alert("❌ File upload failed!");
+                setIsUploading(false);
+                return;
+            }
+            setIpfsHash(uploadedIpfsHash);
+
+            // 5️⃣ Connect to MetaMask
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            await provider.send("eth_requestAccounts", []);
+            const signer = provider.getSigner();
+
+            // 6️⃣ Connect to Smart Contract
+            const contract = new ethers.Contract(CONTRACT_ADDRESS, contractABI.abi, signer);
+
+            // 7️⃣ Manually Estimate Gas
+            console.log("⏳ Estimating gas...");
+            const gasLimit = await contract.estimateGas.addBeneficiary(
+                formData.walletAddress,
+                percentage,
+                uploadedIpfsHash,
+                formData.email
+            );
+
+            console.log(`✅ Estimated Gas Limit: ${gasLimit.toString()}`);
+
+            // 8️⃣ Execute Contract Function
+            console.log("📤 Sending Transaction...");
+            console.log("Will Owner:", willOwner);
+            console.log("Wallet Address:", formData.walletAddress);
+            console.log("Percentage Share:", percentage);
+            console.log("IPFS Hash:", uploadedIpfsHash);
+            console.log("Email:", formData.email);
+
+            const transaction = await contract.addBeneficiary(
+                formData.walletAddress,
+                percentage,
+                uploadedIpfsHash,
+                formData.email,
+                { gasLimit }
+            );
+
+            const result = await transaction.wait();
+            setTransactionHash(result.transactionHash);
+            alert(`✅ Beneficiary added successfully! Transaction Hash: ${result.transactionHash}`);
+
+        } catch (error) {
+            console.error("❌ Error submitting form:", error);
+            setErrorMessage("❌ Submission failed! Check the console for details.");
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    return (
+        <div>
+            <h2>Add Beneficiary</h2>
+            <form onSubmit={handleSubmit}>
+                <input type="text" name="walletAddress" placeholder="Wallet Address" value={formData.walletAddress} onChange={handleChange} required />
+                <input type="email" name="email" placeholder="Beneficiary Email" value={formData.email} onChange={handleChange} required />
+                <input type="number" name="percentageShare" placeholder="Percentage Share" value={formData.percentageShare} onChange={handleChange} required />
+                <input type="file" accept="application/pdf" onChange={handleFileChange} required />
+
+                <button type="submit" disabled={isUploading || !isMetaMaskInstalled}>
+                    {isUploading ? "Processing..." : "Add Beneficiary"}
+                </button>
+
+                {errorMessage && <p style={{ color: "red" }}>❌ {errorMessage}</p>}
+                {ipfsHash && <p>📂 Uploaded to IPFS: <a href={`https://ipfs.io/ipfs/${ipfsHash}`} target="_blank" rel="noopener noreferrer">{ipfsHash}</a></p>}
+                {transactionHash && <p>✅ Transaction Successful! <a href={`https://sepolia.etherscan.io/tx/${transactionHash}`} target="_blank" rel="noopener noreferrer">{transactionHash}</a></p>}
+            </form>
+        </div>
+    );
+};
 
 export default BeneficiaryForm;
