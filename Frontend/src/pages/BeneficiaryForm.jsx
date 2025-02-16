@@ -17,6 +17,12 @@ function BeneficiaryForm({ index, onFormDataChange, initialData }) {
     if (!data.lastName) {
       errors.lastName = 'Last Name is required.';
     }
+    // Email Address (New Field)
+    if (!data.email) {
+      errors.email = 'Email is required.';
+    } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(data.email)) {
+      errors.email = 'Invalid email format.';
+    }
     // Age
     if (!data.age) {
       errors.age = 'Age is required.';
@@ -71,6 +77,7 @@ function BeneficiaryForm({ index, onFormDataChange, initialData }) {
           // Note: We intentionally do not pass previous data when a new form is rendered.
           firstName: initialData?.firstName || '',
           lastName: initialData?.lastName || '',
+          email: initialData?.email || '', // New field
           age: initialData?.age || '',
           relation: initialData?.relation || '',
           walletAddress: initialData?.walletAddress || '',
@@ -117,6 +124,28 @@ function BeneficiaryForm({ index, onFormDataChange, initialData }) {
                       className={classNames({ 'p-error': isFormFieldValid(meta) })}
                     >
                       Last Name*
+                    </label>
+                  </span>
+                  {getFormErrorMessage(meta)}
+                </div>
+              )}
+            </Field>
+
+            {/* Email Address (New Field) */}
+            <Field name="email">
+              {({ input, meta }) => (
+                <div className="field">
+                  <span className="p-float-label">
+                    <InputText
+                      id={`email-${index}`}
+                      {...input}
+                      className={classNames({ 'p-invalid': isFormFieldValid(meta) })}
+                    />
+                    <label
+                      htmlFor={`email-${index}`}
+                      className={classNames({ 'p-error': isFormFieldValid(meta) })}
+                    >
+                      Email Address*
                     </label>
                   </span>
                   {getFormErrorMessage(meta)}
