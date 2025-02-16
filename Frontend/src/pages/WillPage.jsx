@@ -7,9 +7,12 @@ import MultiWillContract from "../data/MultiWillContract.json";
 import { Card } from "primereact/card";
 import { Button } from "primereact/button";
 
+const API_BASE_URL = "http://localhost:3000";
+
 const WillPage = () => {
   const [hasWill, setHasWill] = useState(null);
   const [contract, setContract] = useState(null);
+  const [isSimulating, setIsSimulating] = useState(false);
 
   const navigate = useNavigate();
 
@@ -59,9 +62,30 @@ const WillPage = () => {
     }
   };
 
+  const simulateDeathEvent = async () => {
+    setIsSimulating(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/tasks/trigger`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await response.json();
+      console.log("Task result:", data);
+      alert("Simulation completed successfully");
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Failed to trigger task");
+    } finally {
+      setIsSimulating(false);
+    }
+  };
+
   return (
     <div className="p-4">
-      <Card>
+      {/* Main Will Management Section */}
+      <Card className="mb-4">
         <h2>Will Management</h2>
 
         <div className="mb-3">
@@ -74,14 +98,23 @@ const WillPage = () => {
           {hasWill ? "Will Already Present" : "No Will Found"}
         </div>
 
-        {!hasWill ? (
+        {!hasWill && (
           <Button
             label="Create Will"
             onClick={() => navigate("/beneficiaries")}
           />
-        ) : (
-          ""
         )}
+      </Card>
+
+      {/* Testing Section */}
+      <Card>
+        <h3>Testing Tools</h3>
+        <Button
+          severity="warning"
+          label="Simulate Death Event"
+          loading={isSimulating}
+          onClick={simulateDeathEvent}
+        />
       </Card>
     </div>
   );
